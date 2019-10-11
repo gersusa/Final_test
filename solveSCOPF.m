@@ -296,6 +296,8 @@ vvPerf = Inf(1,2);
 
 % Parameters for parallel OPF
 comb_num=16;
+p=gcp;
+numWorks=p.NumWorkers;
 % Initialize state machine
 stage = initState;
 tFSM1 = 0;
@@ -363,22 +365,25 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        end
        cancel(F);
        % Retrieve operation cost from all OPFs
-       %%cancelledW_idx=cellfun(@(x) ~isempty(x), {F(:).Error});
-       %%OPFfuture=fetchOutputs(F(~cancelledW_idx));
-       %%cost=[OPFfuture(:).f];
-       OPFfuture=[];
+% % %        cancelledW_idx=cellfun(@(x) ~isempty(x), {F(:).Error});
+% % %        OPFfuture=fetchOutputs(F(~cancelledW_idx));
+% % %        cost=[OPFfuture(:).f];
+       OPFfuture={};
+       mpcOPF=struct();
        cost=[];
        for k=1:comb_num
            if isempty(F(k).Error)
                val=fetchOutputs(F(k));
-               OPFfuture=[OPFfuture,val];
+               %OPFfuture=[OPFfuture,val];
+               OPFfuture{k}=val;
                cost=[cost,val.f];
                val.f;
            end
        end
+        OPFfuture(cellfun(@isempty, OPFfuture)) = [];
        % Selecting best solution
        [~,ind_opf]=min(cost);
-       mpcOPF=OPFfuture(ind_opf);
+       mpcOPF=OPFfuture{ind_opf};
 % % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
                 
         if it==0
