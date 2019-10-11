@@ -333,11 +333,11 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         %%%NEW RUN_OPF%%%%%%
 %         aa=tic;
         % OPF (ipopt) computation time in terms of remaining time
-        if it > 0
-            remTime = TimeLimitInSeconds - toc(startTime);
-            max_cpu_time = round(min(max_cpu_time,max(...
-                (remTime-(itEnd+tMargin))*OPF_timeFactor,max_cpu_time*0.5)));
-        end
+% % %         if it > 0
+% % %             remTime = TimeLimitInSeconds - toc(startTime);
+% % %             max_cpu_time = round(min(max_cpu_time,max(...
+% % %                 (remTime-(itEnd+tMargin))*OPF_timeFactor,max_cpu_time*0.5)));
+% % %         end
         % Loading different set of options for parallel OPF
         [OPT, accept_index]= Load_Seeds(0,max_cpu_time,comb_num);
         % Sending task to workers
@@ -379,7 +379,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        % Selecting best solution
        [~,ind_opf]=min(cost);
        mpcOPF=OPFfuture(ind_opf);
-       OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
+% % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
                 
         if it==0
             mpcOPF_or = mpcOPF;
