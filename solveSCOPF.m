@@ -363,22 +363,22 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        end
        cancel(F);
        % Retrieve operation cost from all OPFs
-       cancelledW_idx=cellfun(@(x) ~isempty(x), {F(:).Error});
-       OPF=fetchOutputs(F(~cancelledW_idx));
-       cost=[OPF(:).f];
-%        OPF=[];
-%        cost=[];
-%        for k=1:comb_num
-%            if isempty(F(k).Error)
-%                val=fetchOutputs(F(k));
-%                OPF=[OPF,val];
-%                cost=[cost,val.f];
-%                val.f
-%            end
-%        end
+       %%cancelledW_idx=cellfun(@(x) ~isempty(x), {F(:).Error});
+       %%OPFfuture=fetchOutputs(F(~cancelledW_idx));
+       %%cost=[OPFfuture(:).f];
+       OPFfuture=[];
+       cost=[];
+       for k=1:comb_num
+           if isempty(F(k).Error)
+               val=fetchOutputs(F(k));
+               OPFfuture=[OPFfuture,val];
+               cost=[cost,val.f];
+               val.f;
+           end
+       end
        % Selecting best solution
        [~,ind_opf]=min(cost);
-       mpcOPF=OPF(ind_opf);
+       mpcOPF=OPFfuture(ind_opf);
        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
                 
         if it==0
@@ -1048,7 +1048,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
                 mpc_cp.lamb0_i= [mpc_cp.lamb0_i;mpcOPF.nli.mu.Qt];
             end
         end
-        clearvars mpcOPF
+        clearvars mpcOPF OPF
         
         %-- Update iteration counter
         it = it+1;
