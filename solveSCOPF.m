@@ -295,7 +295,7 @@ lastScore = Inf;
 vvPerf = Inf(1,2);
 
 % Parameters for parallel OPF
-comb_num=16;
+comb_num=1;
 %p=gcp;
 %numWorks=p.NumWorkers;
 % Initialize state machine
@@ -352,7 +352,6 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         runningW=[];
         while 1
             runningW=strcmp({F(1:comb_num).State},'running');
-            fprintf('.')
             if ~all(runningW)
                 disp('.')
                 break
@@ -360,13 +359,13 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         end
        % Waiting for a better solutions if required
        % Cancel remaining tasks on other workers
-       if any(accept_index(~runningW))
-           disp('Waiting for better solutions')
-           pause(5);
-       else
-           pause(0.5);
-       end
-       cancel(F);
+% % %        if any(accept_index(~runningW))
+% % %            disp('Waiting for better solutions')
+% % %            pause(5);
+% % %        else
+% % %            pause(0.5);
+% % %        end
+       cancel(F(1:comb_num));
        % Retrieve operation cost from all OPFs
 % % %        cancelledW_idx=cellfun(@(x) ~isempty(x), {F(:).Error});
 % % %        OPFfuture=fetchOutputs(F(~cancelledW_idx));
@@ -377,7 +376,8 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        try
            for k=1:comb_num
                if isprop(F(k),'Error')
-                   disp('isfield')
+                   F(k).Error
+                   numel(F(k).OutputArguments)
                end
                %if isempty(F(k).Error)
                if numel(F(k).OutputArguments)>0
