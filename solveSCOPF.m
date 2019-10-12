@@ -349,9 +349,12 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         end
 %         send_jobs=toc(aa)
         % Checking worker status
+        runningW=[];
         while 1
-            runningW=strcmp({F(:).State},'running');
+            runningW=strcmp({F(1:comb_num).State},'running');
+            fprintf('.')
             if ~all(runningW)
+                disp('.')
                 break
             end
         end
@@ -373,7 +376,10 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        cost={};
        try
            for k=1:comb_num
-               if numel(F(k).OutputArguments)>0
+               if isprop(F(k),'Error')
+                   disp('isfield')
+               end
+               if isempty(F(k).Error)
                    val=fetchOutputs(F(k));
                    %OPFfuture=[OPFfuture,val];
                    %OPFfields = fieldnames(val);
