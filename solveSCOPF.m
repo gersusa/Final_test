@@ -385,6 +385,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         cost(cellfun(@isempty,cost)) = [];
        catch ME
            disp('Error in parOPF')
+		   delete(gcp('nocreate'))
            break
        end
        % Selecting best solution
