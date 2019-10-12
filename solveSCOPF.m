@@ -389,8 +389,8 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
            break
        end
        % Selecting best solution
-       cost=cell2mat(cost);
-       [~,ind_opf]=min(cost,[],2);
+       cost=cell2mat(cost)
+       [~,ind_opf]=min(cost,[],2)
        mpcOPF=OPFfuture{ind_opf};
 % % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
                 
