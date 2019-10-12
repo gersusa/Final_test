@@ -296,8 +296,8 @@ vvPerf = Inf(1,2);
 
 % Parameters for parallel OPF
 comb_num=16;
-p=gcp;
-numWorks=p.NumWorkers;
+%p=gcp;
+%numWorks=p.NumWorkers;
 % Initialize state machine
 stage = initState;
 tFSM1 = 0;
