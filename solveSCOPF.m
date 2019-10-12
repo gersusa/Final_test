@@ -371,29 +371,30 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        OPFfuture={};
        mpcOPF=struct();
        cost={};
-       try 
-       for k=1:comb_num
-           if isempty(F(k).Error)
-               val=fetchOutputs(F(k));
-               %OPFfuture=[OPFfuture,val];
-               OPFfuture{k}=val;
-               cost{k}=val.f;
-               val.f;
+       try
+           for k=1:comb_num
+               if isempty(F(k).Error)
+                   val=fetchOutputs(F(k));
+                   %OPFfuture=[OPFfuture,val];
+                   OPFfuture{k}=val;
+                   cost{k}=val.f;
+                   val.f;
+               end
            end
-       end
-        OPFfuture(cellfun(@isempty, OPFfuture)) = [];
-        cost(cellfun(@isempty,cost)) = [];
+           OPFfuture(cellfun(@isempty, OPFfuture)) = [];
+           cost(cellfun(@isempty,cost)) = [];
+           % Selecting best solution
+           cost=cell2mat(cost)
+           [~,ind_opf]=min(cost,[],2)
+           mpcOPF=OPFfuture{ind_opf};
+           % % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
        catch ME
            disp('Error in parOPF')
-		   delete(gcp('nocreate'))
+           cost
+           ind_opf
+           delete(gcp('nocreate'))
            break
        end
-       % Selecting best solution
-       cost=cell2mat(cost)
-       [~,ind_opf]=min(cost,[],2)
-       mpcOPF=OPFfuture{ind_opf};
-% % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
-                
         if it==0
             mpcOPF_or = mpcOPF;
             mpcOPF_best = mpcOPF;
