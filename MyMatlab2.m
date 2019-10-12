@@ -19,8 +19,8 @@ function MyMatlab2(InFile1, InFile2, InFile3, InFile4, TimeLimitInSeconds, Scori
 %[mpc,contingencies] = convert2mpc(InFile3,InFile4,InFile2,InFile1);
 load('mpc.mat');
 % Get switched shunts data
-
-[~,pfs] = runAllCONS(mpcOPF, contingencies,mpcOPF_or, 'AC',1); %Force voltages activate
+limitTimeRAC = 1*(length(contingencies.branch)+length(contingencies.gen));
+[~,pfs] = runAllCONS(mpcOPF, contingencies,mpcOPF_or, 'AC',1,limitTimeRAC); %Force voltages activate
 
 
 order_save = mpcOPF_or.order.bus.e2i; % busses w/ fixed shunts

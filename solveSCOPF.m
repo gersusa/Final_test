@@ -296,8 +296,8 @@ vvPerf = Inf(1,2);
 
 % Parameters for parallel OPF
 comb_num=16;
-%p=gcp;
-%numWorks=p.NumWorkers;
+p=gcp;
+numWorks=p.NumWorkers;
 % Initialize state machine
 stage = initState;
 tFSM1 = 0;
@@ -373,14 +373,18 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
        cost={};
        try
            for k=1:comb_num
-               if isempty(F(k).Error)
+               if numel(F(k).OutputArguments)>0
                    val=fetchOutputs(F(k));
                    %OPFfuture=[OPFfuture,val];
+                   %OPFfields = fieldnames(val);
                    OPFfuture{k}=val;
                    cost{k}=val.f;
-                   val.f;
+                   val.f
                end
            end
+           comb_num
+           numel(F)
+           numel(OPFfuture)
            OPFfuture(cellfun(@isempty, OPFfuture)) = [];
            cost(cellfun(@isempty,cost)) = [];
            % Selecting best solution
