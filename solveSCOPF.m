@@ -370,19 +370,26 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
 % % %        cost=[OPFfuture(:).f];
        OPFfuture={};
        mpcOPF=struct();
-       cost=[];
+       cost={};
+       try 
        for k=1:comb_num
            if isempty(F(k).Error)
                val=fetchOutputs(F(k));
                %OPFfuture=[OPFfuture,val];
                OPFfuture{k}=val;
-               cost=[cost,val.f];
+               cost{k}=val.f;
                val.f;
            end
        end
         OPFfuture(cellfun(@isempty, OPFfuture)) = [];
+        cost(cellfun(@isempty,cost)) = [];
+       catch ME
+           disp('Error in parOPF')
+           break
+       end
        % Selecting best solution
-       [~,ind_opf]=min(cost);
+       cost=cell2mat(cost);
+       [~,ind_opf]=min(cost,[],2);
        mpcOPF=OPFfuture{ind_opf};
 % % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
                 
@@ -397,7 +404,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         s1 = mpcOPF.success;
         tOPF1 = toc(tOPF1);
         % Check remaining time
-        if toc(startTime)>TimeLimitInSeconds-tOPF1-(tOPF2+tMargin)
+        if toc(startTime)>TimeLimitInSeconds-(itEnd+tMargin)
             fprintf('Timeout after OPF1\n')
             [mpcOPF_best,mpcOPF_or] = update_finish(mpc_cp,mpcOPF,mpcOPF_best,mpcOPF_or,it);
             break
@@ -456,7 +463,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         %%---------------
 
         % If not enough time left, quit
-        if toc(startTime)>TimeLimitInSeconds-(itEnd+tMargin+tOPF1+tOPF2)
+        if toc(startTime)>TimeLimitInSeconds-(itEnd+tMargin)
             if verbose
                 fprintf('Timeout before selCont\n')
             end
@@ -507,7 +514,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         end
         
         % If not enough time left, quit
-        if toc(startTime)>TimeLimitInSeconds-(itEnd+tMargin+tOPF1+tOPF2+tSelCont)
+        if toc(startTime)>TimeLimitInSeconds-(itEnd-tSelCont+tMargin)
             if verbose
                 fprintf('Timeout before runALLCONS\n')
             end
@@ -519,7 +526,9 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         
         % Run all contingencies on current base case and check
         tRAC = tic;
-        [result,pfs,voltPenalty] = runAllCONS(mpcOPF, contingencies,mpcOPF_or,'AC');
+        limitTimeRAC = TimeLimitInSeconds-(itEnd-tSelCont+tMargin);
+        [result,pfs,voltPenalty] = runAllCONS(mpcOPF,contingencies,...
+            mpcOPF_or,'AC',0,limitTimeRAC);
         tRAC = toc(tRAC);
         if selCont
             selCont_timeFactor = rtCL / tRAC;
@@ -593,8 +602,8 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         % 4. Finite state machine
         %%------
         % If not enough time left, quit
-        if toc(startTime)>TimeLimitInSeconds-tOPF1-tOPF2-tSelCont...
-                -tPen-tSave-(itEnd+tMargin)
+        if toc(startTime)>TimeLimitInSeconds-(itEnd-tSelCont...
+                -tRAC-tPen-tSave+tMargin)
             if verbose
                 fprintf('Timeout before FSM\n')
             end
