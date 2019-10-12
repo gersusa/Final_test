@@ -379,7 +379,8 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
                if isprop(F(k),'Error')
                    disp('isfield')
                end
-               if isempty(F(k).Error)
+               %if isempty(F(k).Error)
+               if numel(F(k).OutputArguments)>0
                    val=fetchOutputs(F(k));
                    %OPFfuture=[OPFfuture,val];
                    %OPFfields = fieldnames(val);
