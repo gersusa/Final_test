@@ -16,8 +16,8 @@ fprintf('Started\n')
 % parpool('local',4);
 % end
 startTime = tic;
-[mpc,contingencies] = convert2mpc(InFile3,InFile4,InFile2,InFile1);
-% [mpc,contingencies] = convert2mpc_par(InFile3,InFile4,InFile2,InFile1);
+% [mpc,contingencies] = convert2mpc(InFile3,InFile4,InFile2,InFile1);
+[mpc,contingencies] = convert2mpc_par(InFile3,InFile4,InFile2,InFile1);
 %TimeLimitInSeconds=600;
 %ScoringMethod=2;
 
