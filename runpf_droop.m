@@ -246,15 +246,15 @@ while (inDeltaK || abs(sum(Pgc)-sum(Pgk))>1e-3) && it<5 && tempPF.success
         Pgk=max(min(Pgk_teo,tempPF.gen(GenInArea,PMAX))...
             ,tempPF.gen(GenInArea,PMIN));
         if ~inDeltaK
-            DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(Pgk==Pgk_teo));
-% % %             if sum(aNorm(Pgk==Pgk_teo))~=0
-% % %                 DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(Pgk==Pgk_teo)); %Algunos no se han saturado
-% % %             elseif max(abs(Pgk_teo-Pgk))<1e-3
-% % %                 DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(abs(Pgk_teo-Pgk)<1e-3)); %Se permite tolerancia
-% % %             else
-% % %                 break;  %Sino, quiere decir que todos estn saturados, no se podra abastecer la demanda sin violar
-% % %                 %En este caso el slack asumira la demanda faltante
-% % %             end
+% % %             DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(Pgk==Pgk_teo));
+            if sum(aNorm(Pgk==Pgk_teo))~=0
+                DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(Pgk==Pgk_teo)); %Algunos no se han saturado
+            elseif max(abs(Pgk_teo-Pgk))<1e-4
+                DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(abs(Pgk_teo-Pgk)<1e-4)); %Se permite tolerancia
+            else
+                break  %Sino, quiere decir que todos estn saturados, no se podra abastecer la demanda sin violar
+                %En este caso el slack asumira la demanda faltante
+            end
         else
             % If DeltaK was specified through input, do not calculate it
             % for the first iteration: take given value.

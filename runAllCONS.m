@@ -394,7 +394,7 @@ while (toc(tRACtot)+toc(tRACloop) < limitTime) && (contEnd < conKeys)
         if pfs_flag
             if forceV
                 pfsT = forceVoltages(resultPF);
-                %pfsT = force_pvpqViol(pfsT , mpcLim);
+                pfsT = force_pvpqViol(pfsT , mpcLim);
             else
                 pfsT = resultPF;
             end
