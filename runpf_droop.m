@@ -247,6 +247,14 @@ while (inDeltaK || abs(sum(Pgc)-sum(Pgk))>1e-3) && it<5 && tempPF.success
             ,tempPF.gen(GenInArea,PMIN));
         if ~inDeltaK
             DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(Pgk==Pgk_teo));
+% % %             if sum(aNorm(Pgk==Pgk_teo))~=0
+% % %                 DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(Pgk==Pgk_teo)); %Algunos no se han saturado
+% % %             elseif max(abs(Pgk_teo-Pgk))<1e-3
+% % %                 DeltaK = DeltaK +(sum(Pgc)-sum(Pgk))./sum(aNorm(abs(Pgk_teo-Pgk)<1e-3)); %Se permite tolerancia
+% % %             else
+% % %                 break;  %Sino, quiere decir que todos estn saturados, no se podra abastecer la demanda sin violar
+% % %                 %En este caso el slack asumira la demanda faltante
+% % %             end
         else
             % If DeltaK was specified through input, do not calculate it
             % for the first iteration: take given value.
@@ -315,7 +323,7 @@ if tempPF.success && enableRecursive
         gOn=(tempPF.gen(:,GEN_STATUS)==1);
         % Necessary to assign values to all online generators
         mpcOPFaux.gen(:,QG) = tempPF.gen(:,QG);
-        %disp('entré a la recursividad: ')
+        %disp('entr\E9 a la recursividad: ')
         tempPF = runpf_droop(mpcOPFaux,contingency,mpopt,0,DeltaK);
         b_ind = eval_pvpqViol(tempPF);
     
