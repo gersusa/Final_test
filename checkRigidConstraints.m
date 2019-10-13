@@ -1,4 +1,4 @@
-function [ mpcPFout ] = checkRigidConstraints( mpcPF )
+function [ mpcPFout ] = checkRigidConstraints( mpcPF, forceV )
 %CHECKRIGIDCONSTRAINTS Check and force rigid constraints
 %   This functions verifies and forces rigid constraints in a MatPower
 %   case. It forces generator reactive values within limits, and changes
@@ -20,7 +20,7 @@ function [ mpcPFout ] = checkRigidConstraints( mpcPF )
 
 mpcPFout = mpcPF;
 %% Verify rigid constraints
-if mpcPFout.success
+if mpcPFout.success || forceV
     % Force Q_G within [QMIN, QMAX]
     mpcPFout.gen(:,QG) = min(max(mpcPFout.gen(:,QG),mpcPFout.gen(:,QMIN)),...
         mpcPFout.gen(:,QMAX));
