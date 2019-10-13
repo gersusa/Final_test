@@ -106,7 +106,7 @@ end
 conKeys = lconKB + lconKG + lOffB + lOffG + lconKOneGen;
 
 %% Validate data
-if length(pfs)~=lconKB + lconKG + lOffB + lOffG + lconKOneGen
+if length(pfs)~=lconKB + lconKG
     error('Array length mismatch')
 end
 
