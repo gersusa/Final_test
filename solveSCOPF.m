@@ -295,7 +295,7 @@ lastScore = Inf;
 vvPerf = Inf(1,2);
 
 % Parameters for parallel OPF
-comb_num=1;
+comb_num=16;
 %p=gcp;
 %numWorks=p.NumWorkers;
 % Initialize state machine
@@ -359,45 +359,46 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         end
        % Waiting for a better solutions if required
        % Cancel remaining tasks on other workers
-% % %        if any(accept_index(~runningW))
-% % %            disp('Waiting for better solutions')
-% % %            pause(5);
-% % %        else
-% % %            pause(0.5);
-% % %        end
+       if any(accept_index(~runningW))
+           disp('Waiting for better solutions')
+           pause(5);
+       else
+           pause(0.5);
+       end
        cancel(F(1:comb_num));
        % Retrieve operation cost from all OPFs
-% % %        cancelledW_idx=cellfun(@(x) ~isempty(x), {F(:).Error});
-% % %        OPFfuture=fetchOutputs(F(~cancelledW_idx));
-% % %        cost=[OPFfuture(:).f];
-       OPFfuture={};
-       mpcOPF=struct();
-       cost={};
        try
-           for k=1:comb_num
-               if isprop(F(k),'Error')
-                   F(k).Error
-                   numel(F(k).OutputArguments)
-               end
-               %if isempty(F(k).Error)
-               if numel(F(k).OutputArguments)>0
-                   val=fetchOutputs(F(k));
-                   %OPFfuture=[OPFfuture,val];
-                   %OPFfields = fieldnames(val);
-                   OPFfuture{k}=val;
-                   cost{k}=val.f;
-                   val.f
-               end
-           end
-           comb_num
-           numel(F)
-           numel(OPFfuture)
-           OPFfuture(cellfun(@isempty, OPFfuture)) = [];
-           cost(cellfun(@isempty,cost)) = [];
+       cancelledW_idx=cellfun(@(x) ~isempty(x), {F(1:comb_num).Error});
+       OPFfuture=fetchOutputs(F(~cancelledW_idx));
+       cost=[OPFfuture(:).f]
+% % %        OPFfuture={};
+% % %        mpcOPF=struct();
+% % %        cost={};
+% % %        try
+% % %            for k=1:comb_num
+% % % %                if isprop(F(k),'Error')
+% % % %                    F(k).Error
+% % % %                    numel(F(k).OutputArguments)
+% % % %                end
+% % %                if isempty(F(k).Error)
+% % %                %if numel(F(k).OutputArguments)>0
+% % %                    val=fetchOutputs(F(k));
+% % %                    %OPFfuture=[OPFfuture,val];
+% % %                    %OPFfields = fieldnames(val);
+% % %                    OPFfuture{k}=val;
+% % %                    cost{k}=val.f;
+% % %                    val.f;
+% % %                end
+% % %            end
+% % %            comb_num
+% % %            numel(F)
+% % %            numel(OPFfuture)
+% % %            OPFfuture(cellfun(@isempty, OPFfuture)) = [];
+% % %            cost(cellfun(@isempty,cost)) = [];
            % Selecting best solution
-           cost=cell2mat(cost)
+           %cost=cell2mat(cost)
            [~,ind_opf]=min(cost,[],2)
-           mpcOPF=OPFfuture{ind_opf};
+           mpcOPF=OPFfuture(ind_opf);
            % % %        OPF_timeFactor = mpcOPF.ipoptopf_solver.cpu / mpcOPF.et;
        catch ME
            disp('Error in parOPF')
