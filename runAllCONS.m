@@ -1,4 +1,5 @@
-function [ result, pfs, voltPenalty] = runAllCONS( mpcOPF, contingencies, mpcLim, pf_model, forceV)
+function [ result, pfs, voltPenalty] = runAllCONS( mpcOPF, contingencies,...
+    mpcLim, pf_model, limitTime, forceV)
 %RUNALLCONS Run all contingencies on a base case
 %   This function applies all contingencies to a base case, one by one and
 %   returns information about all the violations that occurred.
@@ -124,7 +125,7 @@ function [ result, pfs, voltPenalty] = runAllCONS( mpcOPF, contingencies, mpcLim
 %   noConvs. Same as voltViol, for non-convergence issues.
 %
 %   PFS is an optional output argument. An array of N structs, where N is
-%   the number of contingencies. PFS(i) is the resulting MatPower case of
+%   the number of contingencies. pfs(i) is the resulting MatPower case of
 %   MPCOPF after applying the i-th contingency, in internal numbering.
 %
 %   Contingency numbering
@@ -185,10 +186,13 @@ function [ result, pfs, voltPenalty] = runAllCONS( mpcOPF, contingencies, mpcLim
 %   Edited by Dario Arango   dario.arango@gers.com.co
 
 %% Validate inputs
-if nargin<5
+tRACtot = tic;
+if nargin<6
     forceV = false;
 end
-
+if nargin<5
+    limitTime = 1e5;
+end
 if nargin<4
     pf_model = 'AC';
 end
@@ -265,7 +269,6 @@ end
 if isfield(mpcLim,'order')
     mpcLim = rmfield(mpcLim,'order');
 end
-
 mpcOPF = ext2int(mpcOPF);
 mpcLim = ext2int(mpcLim);
 %%-- Copy generator active & reactive limits from MPCLIM to MPCOPF before
@@ -316,156 +319,164 @@ contingency(conKeys)=struct;
 % ticBytes(gcp);
 cc=cell(size(conKeys)); %Cell to save SigmaP post contingences with violations, after force limits
 mpcOPF_P = parallel.pool.Constant(mpcOPF);
-%mpcOPF_P = mpcOPF;
-parfor i=1:conKeys
-
-    pfsT = [];
-   
-    %SI SE RECORTAN VARIOS CAMPOS A mpcOPF que pasar�a?
-    %contingency = struct; %Se crea una por cada iteraci�n? o se puede crear atras ?
-    
-    % Initialize temp slices
-    noConvsTemp = false;  
-    voltViolTemp = false;
-    
-    % Initialize contingency struct
-    %contingency.branch = conBranch_int(i);  %Al parecer guarda la contingencua pertinente
-    %contingency.gen = [];
-    
-    % Apply contingency
-     mpcPF = runpf_droop(mpcOPF_P.Value,contingency(i), mpoption('model',pf_model,'pf.enforce_q_lims',1,'verbose',0,'out.all',0,'pf.tol',1E-4)); %Entr� el MPCOPF como argumento a la funcion
-%    mpcPF = runpf_droop(mpcOPF,contingency(i), mpoption('model',pf_model,'pf.enforce_q_lims',1,'verbose',0,'out.all',0,'pf.tol',1E-4)); %Entr� el MPCOPF como argumento a la funcion
-    
-    %mpcPF = runpf_droop(mpcOPF,contingency(i), mpoption('model',pf_model,...
-    %    'pf.enforce_q_lims',1,'verbose',0,'out.all',0,'pf.tol',1E-4)); 
-    % NOTE: For larger systems, DC PF could be required at this point in
-    % order to obtain reasonable computation times.
-    
-    % Check convergence
-    if ~mpcPF.success
-        noConvsTemp = true;
-    end
-
-    % Check constraint violation
-    
-    [~, details, sigma_th, ~] = checkConstraints(mpcPF,1,mpcLim); %It works in intern index
-    
-    % Find branch with maximum overload and store for sigmaTh.val
-    % Store data about all overloads for sigma.sigma_c
-    [sMax,sMax_i] = max(max(sigma_th,[],2));
-    sigma_aux=zeros(size(sigma_th,1),1);
-    sigma_aux(:,1)=max(sigma_th,[],2);
-    sigmaTh_d{i}=sigma_aux(sigma_aux>0);
-    sigmaTh_d_i{i}=find(sigma_aux>0);
-    if sMax>0
-        sigmaTh_c{i}=i;
-    else
-        sigmaTh_c{i}=[];
-    end
-    
-    sigmaTh(i,1) = sMax;
-    sigmaTh_i(i,1) = sMax_i;
+% mpcOPF_P = mpcOPF;
+conKeys_aux = round(conKeys / 3);
+aux_loop = 1;
+contEnd = 1;
+tRACloop = tic;
+%conKeys
+%limitTime
+while (toc(tRACtot)+toc(tRACloop) < limitTime) && (contEnd < conKeys)
+    %fprintf('.')
+    tRACloop = tic;
+    contIni = aux_loop;
+    contEnd = min(aux_loop+conKeys_aux, conKeys);
+    aux_loop = contEnd+1;
+    parfor i=contIni:contEnd
         
-    if ~isempty(details) && mpcPF.success
-        % If there were violations, check if they were voltage violations
-        voltViolTemp = ~isempty(details.voltageLim);
-    end
-	resultPF = checkRigidConstraints(mpcPF); %Handles all notation in internal index
-
-    % Function CHECKRIGIDCONSTRAINTS is always called on the resulting
-    % case.
-    [~,~,~,sigma_mis] = checkConstraints(resultPF,1,mpcLim); %Handles all notation in internal index
-    
-    % If required, handle pfs output
-    if pfs_flag
-        if forceV
-            pfsT = forceVoltages(resultPF);
+        pfsT = [];
+        
+        %SI SE RECORTAN VARIOS CAMPOS A mpcOPF que pasar�a?
+        %contingency = struct; %Se crea una por cada iteraci�n? o se puede crear atras ?
+        
+        % Initialize temp slices
+        noConvsTemp = false;
+        voltViolTemp = false;
+        
+        % Initialize contingency struct
+        %contingency.branch = conBranch_int(i);  %Al parecer guarda la contingencua pertinente
+        %contingency.gen = [];
+        
+        % Apply contingency
+             mpcPF = runpf_droop(mpcOPF_P.Value,contingency(i), mpoption('model',pf_model,'pf.enforce_q_lims',1,'verbose',0,'out.all',0,'pf.tol',1E-4)); %Entr� el MPCOPF como argumento a la funcion
+%         mpcPF = runpf_droop(mpcOPF,contingency(i), mpoption('model',pf_model,'pf.enforce_q_lims',1,'verbose',0,'out.all',0,'pf.tol',1E-4)); %Entr� el MPCOPF como argumento a la funcion
+        
+        %mpcPF = runpf_droop(mpcOPF,contingency(i), mpoption('model',pf_model,...
+        %    'pf.enforce_q_lims',1,'verbose',0,'out.all',0,'pf.tol',1E-4));
+        % NOTE: For larger systems, DC PF could be required at this point in
+        % order to obtain reasonable computation times.
+        
+        % Check convergence
+        if ~mpcPF.success
+            noConvsTemp = true;
+        end
+        
+        % Check constraint violation
+        [~, details, sigma_th, ~] = checkConstraints(mpcPF,1,mpcLim); %It works in intern index
+        
+        % Find branch with maximum overload and store for sigmaTh.val
+        % Store data about all overloads for sigma.sigma_c
+        [sMax,sMax_i] = max(max(sigma_th,[],2));
+        sigma_aux=zeros(size(sigma_th,1),1);
+        sigma_aux(:,1)=max(sigma_th,[],2);
+        sigmaTh_d{i}=sigma_aux(sigma_aux>0);
+        sigmaTh_d_i{i}=find(sigma_aux>0);
+        if sMax>0
+            sigmaTh_c{i}=i;
         else
-            pfsT = resultPF;
+            sigmaTh_c{i}=[];
         end
-        %A POSSIBLE SOLUTION IS 
-        % Remove unnecessary fields
-      %  pfsT = rmfield(pfsT,{'userfcn','softlims','om','x','mu','var','lin','nle','nli','qdc','raw'});
-        if isfield(pfsT,'qflow')
-            pfsT = rmfield(pfsT,'qflow');
+        
+        sigmaTh(i,1) = sMax;
+        sigmaTh_i(i,1) = sMax_i;
+        
+        if ~isempty(details) && mpcPF.success
+            % If there were violations, check if they were voltage violations
+            voltViolTemp = ~isempty(details.voltageLim);
         end
-    end
-   
-    % Update output arrays
-    noConvs(i) = noConvsTemp;
-    voltViol(i) = voltViolTemp;
-    sigmaMis(i,:) = [sum(evalPenalty(abs(real(sigma_mis)))),...
-                     sum(evalPenalty(abs(imag(sigma_mis))))];
-                 
-                     
- %Edit pfs struct
-  if(voltViolTemp)  %Equivalent to   mpcFArr = arrayfun(@forceVoltages,pfs(logical(result.voltViol)));
-   mpc_vv=forceVoltages(pfsT);
-  [~,~,~,cc{i}] = checkConstraints(mpc_vv,1,mpc_vv);
-  end
-
- %Save just index, vm, va, vmax, vmin ,BS, 
-
-[PQ, PV, REF, NONE, BUS_I, BUS_TYPE, PD, QD, GS, BS, BUS_AREA, VM, ...
-    VA, BASE_KV, ZONE, VMAX, VMIN, LAM_P, LAM_Q, MU_VMAX, MU_VMIN] = idx_bus;
-[F_BUS, T_BUS, BR_R, BR_X, BR_B, RATE_A, RATE_B, RATE_C, ...
-    TAP, SHIFT, BR_STATUS, PF, QF, PT, QT, MU_SF, MU_ST, ...
-    ANGMIN, ANGMAX, MU_ANGMIN, MU_ANGMAX] = idx_brch;
-[GEN_BUS, PG, QG, QMAX, QMIN, VG, MBASE, GEN_STATUS, PMAX, PMIN, ...
-    MU_PMAX, MU_PMIN, MU_QMAX, MU_QMIN, PC1, PC2, QC1MIN, QC1MAX, ...
-    QC2MIN, QC2MAX, RAMP_AGC, RAMP_10, RAMP_30, RAMP_Q, APF] = idx_gen;
-%%- Constants for reactive compensation matrix
-
-
-
-if forceV==1
-    pfsT.order=order_save;
-    pfsT=int2ext(pfsT);
-    %pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,PD) pfsT.bus(:,QD)  pfsT.bus(:,BS) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN)];
-    pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN) pfsT.bus(:,BS)];
-    %pfsT.branch=[pfsT.branch(:,F_BUS) pfsT.branch(:,T_BUS) pfsT.branch(:,PF) pfsT.branch(:,QF) pfsT.branch(:,PT) pfsT.branch(:,QT)];
-    pfsT.gen=[pfsT.gen(:,GEN_BUS) pfsT.gen(:,PG) pfsT.gen(:,QG) pfsT.gen(:,VG)];
-    
-    if ~isfield(pfsT,'iterations')
-        pfsT.iterations=0;
-    end
-    pfsT=rmfield(pfsT,'order');
-    pfsT=rmfield(pfsT,'branch');
-    pfs(i)=pfsT;  %Results are saved
-else
-    if ~isfield(pfsT,'iterations')
-        pfsT.iterations=0;
-    end
-    if voltViol(i)==1
-        pfsT.order=order_save;
-        pfsT=int2ext(pfsT);
-        %pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,PD) pfsT.bus(:,QD)  pfsT.bus(:,BS) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN)];
-        pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN) pfsT.bus(:,BS)];
-        %pfsT.branch=[pfsT.branch(:,F_BUS) pfsT.branch(:,T_BUS) pfsT.branch(:,PF) pfsT.branch(:,QF) pfsT.branch(:,PT) pfsT.branch(:,QT)];
-        pfsT.gen=[];
-        pfsT=rmfield(pfsT,'order');
-        pfsT=rmfield(pfsT,'branch');
-        pfs(i)=pfsT;  %Results are saved
-    else
-        pfsT.bus=[];
-        pfsT.gen=[];
-        if isfield(pfsT,'order')
+        resultPF = checkRigidConstraints(mpcPF,forceV); %Handles all notation in internal index
+        
+        % Function CHECKRIGIDCONSTRAINTS is always called on the resulting
+        % case.
+        [~,~,~,sigma_mis] = checkConstraints(resultPF,1,mpcLim); %Handles all notation in internal index
+        
+        % If required, handle pfs output
+        if pfs_flag
+            if forceV
+                pfsT = forceVoltages(resultPF);
+                %pfsT = force_pvpqViol(pfsT , mpcLim);
+            else
+                pfsT = resultPF;
+            end
+            %A POSSIBLE SOLUTION IS
+            % Remove unnecessary fields
+            %  pfsT = rmfield(pfsT,{'userfcn','softlims','om','x','mu','var','lin','nle','nli','qdc','raw'});
+            if isfield(pfsT,'qflow')
+                pfsT = rmfield(pfsT,'qflow');
+            end
+        end
+        
+        % Update output arrays
+        noConvs(i) = noConvsTemp;
+        voltViol(i) = voltViolTemp;
+        sigmaMis(i,:) = [sum(evalPenalty(abs(real(sigma_mis)))),...
+            sum(evalPenalty(abs(imag(sigma_mis))))];
+        
+        
+        %Edit pfs struct
+        if(voltViolTemp)  %Equivalent to   mpcFArr = arrayfun(@forceVoltages,pfs(logical(result.voltViol)));
+            mpc_vv=forceVoltages(pfsT);
+            [~,~,~,cc{i}] = checkConstraints(mpc_vv,1,mpc_vv);
+        end
+        
+        %Save just index, vm, va, vmax, vmin ,BS,
+        
+        [PQ, PV, REF, NONE, BUS_I, BUS_TYPE, PD, QD, GS, BS, BUS_AREA, VM, ...
+            VA, BASE_KV, ZONE, VMAX, VMIN, LAM_P, LAM_Q, MU_VMAX, MU_VMIN] = idx_bus;
+        [F_BUS, T_BUS, BR_R, BR_X, BR_B, RATE_A, RATE_B, RATE_C, ...
+            TAP, SHIFT, BR_STATUS, PF, QF, PT, QT, MU_SF, MU_ST, ...
+            ANGMIN, ANGMAX, MU_ANGMIN, MU_ANGMAX] = idx_brch;
+        [GEN_BUS, PG, QG, QMAX, QMIN, VG, MBASE, GEN_STATUS, PMAX, PMIN, ...
+            MU_PMAX, MU_PMIN, MU_QMAX, MU_QMIN, PC1, PC2, QC1MIN, QC1MAX, ...
+            QC2MIN, QC2MAX, RAMP_AGC, RAMP_10, RAMP_30, RAMP_Q, APF] = idx_gen;
+        %%- Constants for reactive compensation matrix
+        
+        
+        
+        if forceV==1
+            pfsT.order=order_save;
+            pfsT=int2ext(pfsT);
+            %pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,PD) pfsT.bus(:,QD)  pfsT.bus(:,BS) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN)];
+            pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN) pfsT.bus(:,BS)];
+            %pfsT.branch=[pfsT.branch(:,F_BUS) pfsT.branch(:,T_BUS) pfsT.branch(:,PF) pfsT.branch(:,QF) pfsT.branch(:,PT) pfsT.branch(:,QT)];
+            pfsT.gen=[pfsT.gen(:,GEN_BUS) pfsT.gen(:,PG) pfsT.gen(:,QG) pfsT.gen(:,VG)];
+            
+            if ~isfield(pfsT,'iterations')
+                pfsT.iterations=0;
+            end
             pfsT=rmfield(pfsT,'order');
+            pfsT=rmfield(pfsT,'branch');
+            pfs(i)=pfsT;  %Results are saved
+        else
+            
+            if ~isfield(pfsT,'iterations')
+                pfsT.iterations=0;
+            end
+            if voltViol(i)==1
+                pfsT.order=order_save;
+                pfsT=int2ext(pfsT);
+                %pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,PD) pfsT.bus(:,QD)  pfsT.bus(:,BS) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN)];
+                pfsT.bus=[pfsT.bus(:,BUS_I) pfsT.bus(:,VM) pfsT.bus(:,VA) pfsT.bus(:,VMAX) pfsT.bus(:,VMIN) pfsT.bus(:,BS)];
+                %pfsT.branch=[pfsT.branch(:,F_BUS) pfsT.branch(:,T_BUS) pfsT.branch(:,PF) pfsT.branch(:,QF) pfsT.branch(:,PT) pfsT.branch(:,QT)];
+                pfsT.gen=[];
+                pfsT=rmfield(pfsT,'order');
+                pfsT=rmfield(pfsT,'branch');
+                pfs(i)=pfsT;  %Results are saved
+            else
+                pfsT.bus=[];
+                pfsT.gen=[];
+                if isfield(pfsT,'order')
+                    pfsT=rmfield(pfsT,'order');
+                end
+                pfsT=rmfield(pfsT,'branch');
+                pfs(i)=pfsT;  %Results are saved
+            end            
         end
-        pfsT=rmfield(pfsT,'branch');
-        pfs(i)=pfsT;  %Results are saved
     end
-    
 end
-
-
-
-
- 
-     
-end
-
-
+%disp('.')
+%toc(tRACtot)
+%contEnd
 %% Sigma
 % Summary of overloads. For each line with at least one overload, find
 % worst overload and store in sigmaTh.summary

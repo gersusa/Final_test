@@ -17,7 +17,6 @@ function [ mpcPFout ] = checkRigidConstraints( mpcPF, forceV )
     MU_PMAX, MU_PMIN, MU_QMAX, MU_QMIN, PC1, PC2, QC1MIN, QC1MAX, ...
     QC2MIN, QC2MAX, RAMP_AGC, RAMP_10, RAMP_30, RAMP_Q, APF] = idx_gen;
 %% Initialize
-
 mpcPFout = mpcPF;
 %% Verify rigid constraints
 if mpcPFout.success || forceV
