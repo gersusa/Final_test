@@ -24,5 +24,8 @@ startTime = tic;
 [mpcOPF, ~, mpcOPF_or] = solveSCOPF(mpc,contingencies,...
     true,TimeLimitInSeconds, ScoringMethod, startTime);
 save('mpc.mat','mpcOPF','mpcOPF_or','contingencies');
+disp('Creating solution1.txt')
+a=tic;
 create_solution1(fixGen2Normal(gen2shunts(mpcOPF)));
+toc(a)
 end
