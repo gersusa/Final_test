@@ -16,16 +16,12 @@ fprintf('Started\n')
 % parpool('local',4);
 % end
 startTime = tic;
-% [mpc,contingencies] = convert2mpc(InFile3,InFile4,InFile2,InFile1);
-[mpc,contingencies] = convert2mpc_par(InFile3,InFile4,InFile2,InFile1);
+[mpc,contingencies] = convert2mpc(InFile3,InFile4,InFile2,InFile1);
 %TimeLimitInSeconds=600;
 %ScoringMethod=2;
 
 [mpcOPF, ~, mpcOPF_or] = solveSCOPF(mpc,contingencies,...
     true,TimeLimitInSeconds, ScoringMethod, startTime);
 save('mpc.mat','mpcOPF','mpcOPF_or','contingencies');
-disp('Creating solution1.txt')
-a=tic;
 create_solution1(fixGen2Normal(gen2shunts(mpcOPF)));
-toc(a)
 end
