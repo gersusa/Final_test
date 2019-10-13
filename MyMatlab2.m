@@ -21,8 +21,7 @@ load('mpc.mat');
 % Get switched shunts data
 %limitTimeRAC = (length(contingencies.branch)+length(contingencies.gen));
 [~,pfs] = runAllCONS(mpcOPF, contingencies,mpcOPF_or, 'AC',1); %Force voltages activate
-length(pfs)
-isempty(pfs)
+disp('finished: runAllCONS')
 order_save = mpcOPF_or.order.bus.e2i; % busses w/ fixed shunts
 
 %%
