@@ -1,5 +1,5 @@
 function [ result, pfs, voltPenalty] = runAllCONS( mpcOPF, contingencies,...
-    mpcLim, pf_model, limitTime, forceV)
+    mpcLim, pf_model, forceV, limitTime)
 %RUNALLCONS Run all contingencies on a base case
 %   This function applies all contingencies to a base case, one by one and
 %   returns information about all the violations that occurred.
@@ -188,10 +188,10 @@ function [ result, pfs, voltPenalty] = runAllCONS( mpcOPF, contingencies,...
 %% Validate inputs
 tRACtot = tic;
 if nargin<6
-    forceV = false;
+    limitTime = 1e5;
 end
 if nargin<5
-    limitTime = 1e5;
+    forceV = false;
 end
 if nargin<4
     pf_model = 'AC';
