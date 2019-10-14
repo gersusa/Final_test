@@ -326,13 +326,14 @@ contEnd = 1;
 tRACloop = tic;
 %conKeys
 %limitTime
-while (toc(tRACtot)+toc(tRACloop) < limitTime) && (contEnd < conKeys)
-    %fprintf('.')
-    tRACloop = tic;
-    contIni = aux_loop;
-    contEnd = min(aux_loop+conKeys_aux, conKeys);
-    aux_loop = contEnd+1;
-    parfor i=contIni:contEnd
+%while (toc(tRACtot)+toc(tRACloop) < limitTime) && (contEnd < conKeys)
+    %%fprintf('.')
+    %tRACloop = tic;
+    %contIni = aux_loop;
+    %contEnd = min(aux_loop+conKeys_aux, conKeys);
+    %aux_loop = contEnd+1;
+    %parfor i=contIni:contEnd
+    parfor i=1:conKeys
         
         pfsT = [];
         
@@ -473,10 +474,11 @@ while (toc(tRACtot)+toc(tRACloop) < limitTime) && (contEnd < conKeys)
             end            
         end
     end
-end
+%end
 %disp('.')
 %toc(tRACtot)
 %contEnd
+toc(tRACloop)
 %% Sigma
 % Summary of overloads. For each line with at least one overload, find
 % worst overload and store in sigmaTh.summary
