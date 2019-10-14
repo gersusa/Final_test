@@ -416,7 +416,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
             voltPenalty_best = voltPenalty;
         end
         s1 = mpcOPF.success;
-        tOPF1 = toc(tOPF1);
+        tOPF1 = toc(tOPF1)
         % Check remaining time
         if toc(startTime)>TimeLimitInSeconds-(itEnd+tMargin)
             fprintf('Timeout after OPF1\n')
@@ -528,6 +528,8 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         end
         
         % If not enough time left, quit
+        toc(startTime)
+        TimeLimitInSeconds-(itEnd-tSelCont+tMargin)
         if toc(startTime)>TimeLimitInSeconds-(itEnd-tSelCont+tMargin)
             if verbose
                 fprintf('Timeout before runALLCONS\n')
@@ -543,14 +545,14 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
         limitTimeRAC = TimeLimitInSeconds-(itEnd-tSelCont+tMargin);
         [result,pfs,voltPenalty] = runAllCONS(mpcOPF,contingencies,...
             mpcOPF_or,'AC');
-        tRAC = toc(tRAC);
-        if selCont
-            selCont_timeFactor = rtCL / tRAC;
-            remTime = TimeLimitInSeconds - toc(startTime);
-            rtCL = round(min(rtCL, selCont_timeFactor *...
-                (remTime-tFSM1-tFSM2-tOPF1)), 2);
-            rtCG = rtCL;
-        end
+        tRAC = toc(tRAC)
+% % %         if selCont
+% % %             selCont_timeFactor = rtCL / tRAC;
+% % %             remTime = TimeLimitInSeconds - toc(startTime);
+% % %             rtCL = round(min(rtCL, selCont_timeFactor *...
+% % %                 (remTime-tFSM1-tFSM2-tOPF1)), 2);
+% % %             rtCG = rtCL;
+% % %         end
         % Contingency penalty: overload + power mismatch
         tPen = tic;
         ctgPen=0.5.*sum(evalPenalty(cat(1,result.sigma.sigma_c.sigmaTh{:})))./...
@@ -558,7 +560,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
             0.5.*sum(result.sigma.sigmaMis(:))./...
             (length(contingencies.branch)+length(contingencies.gen));
 
-        tPen = toc(tPen);
+        tPen = toc(tPen)
 
         %%---------------
         % 3. Save best solution
@@ -587,7 +589,7 @@ mpc_cp = extend_opf(mpc_cp,'on',contingencies);
             voltPenalty_best = voltPenalty;
             contingencies_best=contingencies;
         end
-        tSave = toc(tSave);
+        tSave = toc(tSave)
 
         % Evaluate improvement of current solution
         improv = circshift(improv,1,2);
